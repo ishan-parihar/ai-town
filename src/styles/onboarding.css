@@ -1,0 +1,307 @@
+/* Onboarding and Tutorial Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  53%,
+  80%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%,
+  43% {
+    transform: translate3d(0, -30px, 0);
+  }
+  70% {
+    transform: translate3d(0, -15px, 0);
+  }
+  90% {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(59, 130, 246, 0.8),
+      0 0 30px rgba(59, 130, 246, 0.6);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-slide-out {
+  animation: slideOut 0.3s ease-in;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+.animate-glow {
+  animation: glow 2s infinite;
+}
+
+/* Tooltip specific animations */
+.tooltip-enter {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.tooltip-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
+}
+
+.tooltip-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.tooltip-exit-active {
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 0.15s ease-in,
+    transform 0.15s ease-in;
+}
+
+/* Progress bar animations */
+.progress-bar-fill {
+  transition: width 0.5s ease-out;
+}
+
+.progress-bar-milestone {
+  transition: all 0.3s ease-out;
+}
+
+/* Achievement unlock animations */
+.achievement-unlock {
+  animation:
+    bounce 0.6s ease-out,
+    glow 1s ease-out 0.3s;
+}
+
+.achievement-sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: gold;
+  border-radius: 50%;
+  animation: sparkle 1s ease-out forwards;
+}
+
+@keyframes sparkle {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx, 0), var(--ty, 0)) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Onboarding step transitions */
+.step-transition-enter {
+  opacity: 0;
+  transform: translateX(100px);
+}
+
+.step-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    opacity 0.3s ease-out,
+    transform 0.3s ease-out;
+}
+
+.step-transition-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.step-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-100px);
+  transition:
+    opacity 0.3s ease-in,
+    transform 0.3s ease-in;
+}
+
+/* Spotlight effect for tutorials */
+.spotlight-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.spotlight-highlight {
+  position: absolute;
+  border: 3px solid #3b82f6;
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+  transition: all 0.3s ease-out;
+  pointer-events: none;
+}
+
+/* Help center animations */
+.help-category-expand {
+  transition:
+    max-height 0.3s ease-out,
+    opacity 0.3s ease-out;
+}
+
+.help-article-hover {
+  transition: all 0.2s ease-out;
+}
+
+.help-article-hover:hover {
+  transform: translateX(4px);
+  border-left-color: #3b82f6;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .animate-slide-in {
+    animation: slideInMobile 0.3s ease-out;
+  }
+
+  .animate-slide-out {
+    animation: slideOutMobile 0.3s ease-in;
+  }
+
+  @keyframes slideInMobile {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideOutMobile {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+}
+
+/* Dark mode adjustments */
+.dark-mode .tooltip {
+  background: #1f2937;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+.dark-mode .spotlight-highlight {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-in,
+  .animate-slide-out,
+  .animate-bounce,
+  .animate-pulse,
+  .animate-glow {
+    animation: none;
+  }
+
+  .tooltip-enter-active,
+  .tooltip-exit-active,
+  .step-transition-enter-active,
+  .step-transition-exit-active,
+  .progress-bar-fill,
+  .progress-bar-milestone,
+  .help-category-expand,
+  .help-article-hover {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .spotlight-highlight {
+    border-width: 4px;
+    border-color: #ffffff;
+  }
+
+  .tooltip {
+    border-width: 2px;
+    border-color: #ffffff;
+  }
+}

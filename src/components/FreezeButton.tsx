@@ -1,23 +1,22 @@
-import { useMutation, useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { useQuery, useMutation } from '../hooks/useApi';
 import Button from './buttons/Button';
 
 export default function FreezeButton() {
-  const stopAllowed = useQuery(api.testing.stopAllowed) ?? false;
-  const defaultWorld = useQuery(api.world.defaultWorldStatus);
+  const { data: stopAllowed } = useQuery('/api/testing/stopAllowed') ?? false;
+  const { data: defaultWorld } = useQuery('/api/world');
 
   const frozen = defaultWorld?.status === 'stoppedByDeveloper';
 
-  const unfreeze = useMutation(api.testing.resume);
-  const freeze = useMutation(api.testing.stop);
+  const { mutate: unfreeze } = useMutation();
+  const { mutate: freeze } = useMutation();
 
   const flipSwitch = async () => {
     if (frozen) {
       console.log('Unfreezing');
-      await unfreeze();
+      await unfreeze('/api/testing/resume');
     } else {
       console.log('Freezing');
-      await freeze();
+      await freeze('/api/testing/stop');
     }
   };
 

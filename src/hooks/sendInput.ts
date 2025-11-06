@@ -1,51 +1,78 @@
-import { ConvexReactClient, useConvex } from 'convex/react';
-import { InputArgs, InputReturnValue, Inputs } from '../../convex/aiTown/inputs';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useMutation } from './useApi';
 
-export async function waitForInput(convex: ConvexReactClient, inputId: Id<'inputs'>) {
-  const watch = convex.watchQuery(api.aiTown.main.inputStatus, { inputId });
-  let result = watch.localQueryResult();
-  // The result's undefined if the query's loading and null if the input hasn't
-  // been processed yet.
-  if (result === undefined || result === null) {
-    let dispose: undefined | (() => void);
+// Define input types locally since we're removing Convex dependencies
+export interface InputArgs<Name> {
+  [key: string]: any;
+}
+
+export interface InputReturnValue<Name> {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
+
+export interface Inputs {
+  // Define your input types here
+  [key: string]: any;
+}
+
+export async function waitForInput(inputId: string): Promise<any> {
+  // Poll for input completion via our API
+  const maxAttempts = 30; // 30 seconds timeout
+  const delay = 1000; // 1 second
+  
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      await new Promise<void>((resolve, reject) => {
-        dispose = watch.onUpdate(() => {
-          try {
-            result = watch.localQueryResult();
-          } catch (e: any) {
-            reject(e);
-            return;
-          }
-          if (result !== undefined && result !== null) {
-            resolve();
-          }
-        });
-      });
-    } finally {
-      if (dispose) {
-        dispose();
+      const response = await fetch(`/api/inputs/${inputId}/status`);
+      const result = await response.json();
+      
+      if (result.status === 'completed') {
+        if (result.kind === 'error') {
+          throw new Error(result.message);
+        }
+        return result.value;
       }
+      
+      if (result.status === 'failed') {
+        throw new Error(`Input ${inputId} failed to process.`);
+      }
+      
+      // Still processing, wait and try again
+      await new Promise(resolve => setTimeout(resolve, delay));
+    } catch (error) {
+      if (attempt === maxAttempts - 1) {
+        throw new Error(`Input ${inputId} was never processed.`);
+      }
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
-  if (!result) {
-    throw new Error(`Input ${inputId} was never processed.`);
-  }
-  if (result.kind === 'error') {
-    throw new Error(result.message);
-  }
-  return result.value;
+  
+  throw new Error(`Input ${inputId} timed out.`);
 }
 
 export function useSendInput<Name extends keyof Inputs>(
-  engineId: Id<'engines'>,
+  engineId: string,
   name: Name,
 ): (args: InputArgs<Name>) => Promise<InputReturnValue<Name>> {
-  const convex = useConvex();
+  const { mutate } = useMutation();
+  
   return async (args) => {
-    const inputId = await convex.mutation(api.world.sendWorldInput, { engineId, name, args });
-    return await waitForInput(convex, inputId);
+    try {
+      // Send input via our API
+      const inputId = await mutate('world/sendWorldInput', { engineId, name, args });
+      
+      // Wait for the input to be processed
+      const result = await waitForInput(inputId as string);
+      
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   };
 }

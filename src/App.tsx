@@ -1,136 +1,106 @@
+import { useState, useEffect } from 'react';
 import Game from './components/Game.tsx';
-
 import { ToastContainer } from 'react-toastify';
-import a16zImg from '../assets/a16z.png';
-import convexImg from '../assets/convex.svg';
-import starImg from '../assets/star.svg';
-import helpImg from '../assets/help.svg';
-// import { UserButton } from '@clerk/clerk-react';
-// import { Authenticated, Unauthenticated } from 'convex/react';
-// import LoginButton from './components/buttons/LoginButton.tsx';
-import { useState } from 'react';
-import ReactModal from 'react-modal';
+import PoweredBySelfHosted from './components/PoweredBySelfHosted.tsx';
 import MusicButton from './components/buttons/MusicButton.tsx';
 import Button from './components/buttons/Button.tsx';
 import InteractButton from './components/buttons/InteractButton.tsx';
 import FreezeButton from './components/FreezeButton.tsx';
-import { MAX_HUMAN_PLAYERS } from '../convex/constants.ts';
-import PoweredByConvex from './components/PoweredByConvex.tsx';
+import ReactModal from 'react-modal';
 
 export default function Home() {
   const [helpModalOpen, setHelpModalOpen] = useState(false);
+
+  // Initialize PIXI.js Assets system
+  useEffect(() => {
+    const initPixi = async () => {
+      try {
+        const { Assets } = await import('pixi.js');
+        await Assets.init();
+        console.log('✅ PIXI.js Assets initialized successfully');
+      } catch (error) {
+        console.warn('⚠️ PIXI.js Assets initialization failed:', error);
+      }
+    };
+    initPixi();
+  }, []);
+
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-between font-body game-background">
-      <PoweredByConvex />
+      <PoweredBySelfHosted />
+      
+      {/* Game UI with title and description */}
+      <h1 className="text-center text-6xl font-bold font-display game-title">AI Council LifeOS</h1>
+      <div className="text-center text-white">
+        Your personal AI council providing holistic life guidance and insights.
+      </div>
+      
+      {/* The actual PIXI.js game */}
+      <Game />
+      
+      {/* Footer with control buttons */}
+      <footer className="flex items-center gap-3 p-6">
+        <FreezeButton />
+        <MusicButton />
+        <Button href="https://github.com/a16z-infra/ai-town">
+          Star
+        </Button>
+        <InteractButton />
+        <Button 
+          onClick={() => setHelpModalOpen(true)}
+        >
+          Help
+        </Button>
+      </footer>
 
+      {/* Help Modal */}
       <ReactModal
         isOpen={helpModalOpen}
         onRequestClose={() => setHelpModalOpen(false)}
-        style={modalStyles}
-        contentLabel="Help modal"
-        ariaHideApp={false}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50"
       >
-        <div className="font-body">
-          <h1 className="text-center text-6xl font-bold font-display game-title">Help</h1>
-          <p>
-            Welcome to AI town. AI town supports both anonymous <i>spectators</i> and logged in{' '}
-            <i>interactivity</i>.
-          </p>
-          <h2 className="text-4xl mt-4">Spectating</h2>
-          <p>
-            Click and drag to move around the town, and scroll in and out to zoom. You can click on
-            an individual character to view its chat history.
-          </p>
-          <h2 className="text-4xl mt-4">Interactivity</h2>
-          <p>
-            If you log in, you can join the simulation and directly talk to different agents! After
-            logging in, click the "Interact" button, and your character will appear somewhere on the
-            map with a highlighted circle underneath you.
-          </p>
-          <p className="text-2xl mt-2">Controls:</p>
-          <p className="mt-4">Click to navigate around.</p>
-          <p className="mt-4">
-            To talk to an agent, click on them and then click "Start conversation," which will ask
-            them to start walking towards you. Once they're nearby, the conversation will start, and
-            you can speak to each other. You can leave at any time by closing the conversation pane
-            or moving away. They may propose a conversation to you - you'll see a button to accept
-            in the messages panel.
-          </p>
-          <p className="mt-4">
-            AI town only supports {MAX_HUMAN_PLAYERS} humans at a time. If you're idle for five
-            minutes, you'll be automatically removed from the simulation.
-          </p>
+        <div className="bg-gray-800 rounded-lg p-6 max-w-2xl max-h-[80vh] overflow-y-auto text-white">
+          <h2 className="text-2xl font-bold mb-4">AI Council LifeOS Guide</h2>
+          <div className="space-y-4 text-gray-300">
+            <p>
+              Welcome to AI Council LifeOS! Your personal council of 8 specialized AI advisors 
+              provides holistic guidance across all life domains through an interactive virtual world.
+            </p>
+            <div>
+              <h3 className="font-semibold text-white mb-2">Your Council Members:</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li><span className="text-green-400">Aria</span> - Life Coach & Personal Development</li>
+                <li><span className="text-blue-400">Marcus</span> - Financial Analyst & Wealth Management</li>
+                <li><span className="text-pink-400">Dr. Lena</span> - Health & Wellness Advisor</li>
+                <li><span className="text-orange-400">Sophia</span> - Career Strategist</li>
+                <li><span className="text-purple-400">David</span> - Relationship Counselor</li>
+                <li><span className="text-cyan-400">Ruby</span> - Knowledge Curator</li>
+                <li><span className="text-yellow-400">Max</span> - Productivity Manager</li>
+                <li><span className="text-gray-400">Nova</span> - Integration Coordinator</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-white mb-2">How to Use:</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Click on council members to speak with them individually</li>
+                <li>Drag to move around the council chamber</li>
+                <li>Scroll to zoom in/out of the space</li>
+                <li>Watch council members interact and collaborate</li>
+                <li>Receive personalized insights based on your goals</li>
+              </ul>
+            </div>
+          </div>
+          <button
+            onClick={() => setHelpModalOpen(false)}
+            className="mt-6 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
+          >
+            Close
+          </button>
         </div>
       </ReactModal>
-      {/*<div className="p-3 absolute top-0 right-0 z-10 text-2xl">
-        <Authenticated>
-          <UserButton afterSignOutUrl="/ai-town" />
-        </Authenticated>
-
-        <Unauthenticated>
-          <LoginButton />
-        </Unauthenticated>
-      </div> */}
-
-      <div className="w-full lg:h-screen min-h-screen relative isolate overflow-hidden lg:p-8 shadow-2xl flex flex-col justify-start">
-        <h1 className="mx-auto text-4xl p-3 sm:text-8xl lg:text-9xl font-bold font-display leading-none tracking-wide game-title w-full text-left sm:text-center sm:w-auto">
-          AI Town
-        </h1>
-
-        <div className="max-w-xs md:max-w-xl lg:max-w-none mx-auto my-4 text-center text-base sm:text-xl md:text-2xl text-white leading-tight shadow-solid">
-          A virtual town where AI characters live, chat and socialize.
-          {/* <Unauthenticated>
-            <div className="my-1.5 sm:my-0" />
-            Log in to join the town
-            <br className="block sm:hidden" /> and the conversation!
-          </Unauthenticated> */}
-        </div>
-
-        <Game />
-
-        <footer className="justify-end bottom-0 left-0 w-full flex items-center mt-4 gap-3 p-6 flex-wrap pointer-events-none">
-          <div className="flex gap-4 flex-grow pointer-events-none">
-            <FreezeButton />
-            <MusicButton />
-            <Button href="https://github.com/a16z-infra/ai-town" imgUrl={starImg}>
-              Star
-            </Button>
-            <InteractButton />
-            <Button imgUrl={helpImg} onClick={() => setHelpModalOpen(true)}>
-              Help
-            </Button>
-          </div>
-          <a href="https://a16z.com">
-            <img className="w-8 h-8 pointer-events-auto" src={a16zImg} alt="a16z" />
-          </a>
-          <a href="https://convex.dev/c/ai-town">
-            <img className="w-20 h-8 pointer-events-auto" src={convexImg} alt="Convex" />
-          </a>
-        </footer>
-        <ToastContainer position="bottom-right" autoClose={2000} closeOnClick theme="dark" />
-      </div>
+      
+      <ToastContainer />
     </main>
   );
 }
-
-const modalStyles = {
-  overlay: {
-    backgroundColor: 'rgb(0, 0, 0, 75%)',
-    zIndex: 12,
-  },
-  content: {
-    top: '50%',
-    left: '50%',
-    right: 'auto',
-    bottom: 'auto',
-    marginRight: '-50%',
-    transform: 'translate(-50%, -50%)',
-    maxWidth: '50%',
-
-    border: '10px solid rgb(23, 20, 33)',
-    borderRadius: '0',
-    background: 'rgb(35, 38, 58)',
-    color: 'white',
-    fontFamily: '"Upheaval Pro", "sans-serif"',
-  },
-};

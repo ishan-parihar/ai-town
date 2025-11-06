@@ -18,7 +18,7 @@
 // Keybindings:
 // <ctl>-z - undo
 // g - overlay 32x32 grid
-// s - generate .js file to move over to convex/maps/
+// s - generate .js file to move over to data/maps/
 // m - place a semi-transparent red mask over all tiles. This helps find invisible tiles
 // d - hold while clicking a tile to delete
 // p - toggle between 16pixel and 32 pixel. 

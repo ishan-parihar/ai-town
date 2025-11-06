@@ -1,0 +1,6 @@
+AI Council API server running at http://localhost:3001
+Data processing pipeline initialized
+Telegram bot registered: Test Bot
+Mock Telegram: Sending to 123456: Test message from AI Council
+Mock Telegram: Deleting webhook
+Telegram bot unregistered: Test Bot

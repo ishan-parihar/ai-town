@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PIXI.js Asset Loading Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.2.4/dist/pixi.min.js"></script>
+</head>
+<body>
+    <h1>PIXI.js Asset Loading Test</h1>
+    <div id="output"></div>
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+            div.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            output.appendChild(div);
+            console.log(message);
+        }
+        
+        async function testAssetLoading() {
+            log('=== PIXI.js Asset Loading Test ===');
+            log('PIXI.js version: ' + PIXI.VERSION);
+            
+            try {
+                // Test 1: Check Assets availability
+                log('Assets class: ' + typeof PIXI.Assets);
+                
+                // Test 2: Initialize Assets
+                try {
+                    await PIXI.Assets.init();
+                    log('✅ Assets initialized successfully', 'success');
+                } catch (e) {
+                    log('⚠️ Assets initialization skipped: ' + e.message);
+                }
+                
+                // Test 3: Load tileset directly
+                const tilesetUrl = '/assets/gentle-obj.png';
+                log('Testing tileset URL: ' + tilesetUrl);
+                
+                try {
+                    const texture = await PIXI.Assets.load(tilesetUrl);
+                    log('✅ Tileset loaded successfully', 'success');
+                    log('Texture details: width=' + texture.width + ', height=' + texture.height);
+                    
+                    // Test 4: Create a simple sprite and display it
+                    const app = new PIXI.Application({
+                        width: 400,
+                        height: 400,
+                        backgroundColor: 0x1099bb
+                    });
+                    document.body.appendChild(app.view);
+                    
+                    const sprite = new PIXI.Sprite(texture);
+                    sprite.x = 50;
+                    sprite.y = 50;
+                    sprite.scale.set(0.5);
+                    app.stage.addChild(sprite);
+                    log('✅ Sprite rendered successfully', 'success');
+                    
+                } catch (error) {
+                    log('❌ Failed to load tileset: ' + error.message, 'error');
+                }
+                
+                // Test 5: Test legacy BaseTexture.from
+                log('Testing legacy BaseTexture.from...');
+                try {
+                    const baseTexture = PIXI.BaseTexture.from(tilesetUrl);
+                    log('✅ BaseTexture created successfully', 'success');
+                    log('BaseTexture details: valid=' + baseTexture.valid + ', width=' + baseTexture.width);
+                } catch (error) {
+                    log('❌ Failed to create BaseTexture: ' + error.message, 'error');
+                }
+                
+                // Test 6: Check network request
+                log('Testing direct network request...');
+                try {
+                    const response = await fetch(tilesetUrl);
+                    if (response.ok) {
+                        log('✅ Asset accessible via network', 'success');
+                        log('Content-Type: ' + response.headers.get('content-type'));
+                        log('Content-Length: ' + response.headers.get('content-length'));
+                    } else {
+                        log('❌ Network request failed: ' + response.status, 'error');
+                    }
+                } catch (error) {
+                    log('❌ Network request error: ' + error.message, 'error');
+                }
+                
+            } catch (error) {
+                log('❌ Test failed: ' + error.message, 'error');
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', testAssetLoading);
+    </script>
+</body>
+</html>

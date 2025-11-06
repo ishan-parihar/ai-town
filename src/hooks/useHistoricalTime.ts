@@ -1,14 +1,13 @@
-import { Doc } from '../../convex/_generated/dataModel';
 import { useEffect, useRef, useState } from 'react';
 
-export function useHistoricalTime(engineStatus?: Doc<'engines'>) {
+export function useHistoricalTime(engineStatus?: any) {
   const timeManager = useRef(new HistoricalTimeManager());
   const rafRef = useRef<number>();
   const [historicalTime, setHistoricalTime] = useState<number | undefined>(undefined);
   if (engineStatus) {
     timeManager.current.receive(engineStatus);
   }
-  const updateTime = (performanceNow: number) => {
+  const updateTime = (_performanceNow: number) => {
     // We don't need sub-millisecond precision for interpolation, so just use `Date.now()`.
     const now = Date.now();
     setHistoricalTime(timeManager.current.historicalServerTime(now));
@@ -32,9 +31,9 @@ export class HistoricalTimeManager {
   prevServerTs?: number;
   totalDuration: number = 0;
 
-  latestEngineStatus?: Doc<'engines'>;
+  latestEngineStatus?: any;
 
-  receive(engineStatus: Doc<'engines'>) {
+  receive(engineStatus: any) {
     this.latestEngineStatus = engineStatus;
     if (!engineStatus.currentTime || !engineStatus.lastStepTs) {
       return;
@@ -84,7 +83,7 @@ export class HistoricalTimeManager {
       lastServerTs - MAX_SERVER_BUFFER_AGE,
     );
 
-    let chosen = null;
+    let chosenIndex: number | null = null;
     for (let i = 0; i < this.intervals.length; i++) {
       const snapshot = this.intervals[i];
       // We're past this snapshot, continue to the next one.
@@ -93,22 +92,22 @@ export class HistoricalTimeManager {
       }
       // We're cleanly within this snapshot.
       if (serverTs >= snapshot.startTs) {
-        chosen = i;
+        chosenIndex = i;
         break;
       }
       // We've gone past the desired timestamp, which implies a gap in our server state.
       // Jump time forward to the beginning of this snapshot.
       if (serverTs < snapshot.startTs) {
         serverTs = snapshot.startTs;
-        chosen = i;
+        chosenIndex = i;
       }
     }
-    if (chosen === null) {
+    if (chosenIndex === null) {
       serverTs = this.intervals.at(-1)!.endTs;
-      chosen = this.intervals.length - 1;
+      chosenIndex = this.intervals.length - 1;
     }
     // Time only moves forward, so we can trim all of the snapshots before our chosen one.
-    const toTrim = Math.max(chosen - 1, 0);
+    const toTrim = Math.max(chosenIndex - 1, 0);
     if (toTrim > 0) {
       for (const snapshot of this.intervals.slice(0, toTrim)) {
         this.totalDuration -= snapshot.endTs - snapshot.startTs;

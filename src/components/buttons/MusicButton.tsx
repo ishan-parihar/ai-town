@@ -2,11 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import volumeImg from '../../../assets/volume.svg';
 import { sound } from '@pixi/sound';
 import Button from './Button';
-import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { useQuery } from '../../hooks/useApi';
 
 export default function MusicButton() {
-  const musicUrl = useQuery(api.music.getBackgroundMusic);
+  const { data: musicUrl } = useQuery('/api/music/background');
   const [isPlaying, setPlaying] = useState(false);
 
   useEffect(() => {

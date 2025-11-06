@@ -1,9 +1,16 @@
 import { Graphics } from '@pixi/react';
 import { Graphics as PixiGraphics } from 'pixi.js';
 import { useCallback } from 'react';
-import { Doc } from '../../convex/_generated/dataModel';
-import { Player } from '../../convex/aiTown/player';
-import { unpackPathComponent } from '../../convex/util/types';
+
+interface Player {
+  id: string;
+  pathfinding?: {
+    state: {
+      kind: string;
+      path?: any[];
+    };
+  };
+}
 
 export function DebugPath({ player, tileDim }: { player: Player; tileDim: number }) {
   const path = player.pathfinding?.state.kind == 'moving' && player.pathfinding.state.path;
@@ -31,6 +38,16 @@ export function DebugPath({ player, tileDim }: { player: Player; tileDim: number
   );
   return path ? <Graphics draw={draw} /> : null;
 }
+
+function unpackPathComponent(path: any): { position: { x: number; y: number } } {
+  // Simplified implementation for self-hosted
+  if (typeof path === 'object' && path.position) {
+    return path;
+  }
+  // Fallback for legacy format
+  return { position: { x: path.x || 0, y: path.y || 0 } };
+}
+
 function debugColor(_id: string) {
   return { h: 0, s: 50, l: 90 };
 }

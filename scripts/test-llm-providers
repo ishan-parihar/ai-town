@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# Custom LLM Provider Test Script Wrapper
+# This script provides easy shortcuts for common testing scenarios
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEST_SCRIPT="$SCRIPT_DIR/test-custom-providers.js"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to show help
+show_help() {
+    cat << EOF
+Custom LLM Provider Test Script Wrapper
+
+Usage: $0 [COMMAND] [OPTIONS]
+
+Commands:
+    quick        Run quick tests (skip performance benchmarks)
+    full         Run comprehensive tests with performance benchmarks
+    verbose      Run tests with detailed output
+    report       Save test report to file
+    help         Show this help message
+
+Examples:
+    $0 quick                    # Quick test
+    $0 full                     # Full test with performance
+    $0 verbose                  # Verbose output
+    $0 report                   # Save report to test-report.txt
+    $0 report my-report.txt     # Save report to custom file
+
+All options support additional flags:
+    --help                      Show detailed help
+    --verbose                   Enable verbose output
+    --quick                     Skip performance tests
+    --report-file <path>        Save report to file
+
+EOF
+}
+
+# Main script logic
+case "${1:-help}" in
+    "quick")
+        print_status "Running quick LLM provider tests..."
+        node "$TEST_SCRIPT" --quick
+        ;;
+    "full")
+        print_status "Running comprehensive LLM provider tests..."
+        node "$TEST_SCRIPT" --verbose
+        ;;
+    "verbose")
+        print_status "Running tests with verbose output..."
+        node "$TEST_SCRIPT" --verbose --quick
+        ;;
+    "report")
+        REPORT_FILE="${2:-test-report-$(date +%Y%m%d-%H%M%S).txt}"
+        print_status "Running tests and saving report to: $REPORT_FILE"
+        node "$TEST_SCRIPT" --quick --report-file "$REPORT_FILE"
+        print_success "Report saved to: $REPORT_FILE"
+        ;;
+    "help"|"-h"|"--help")
+        show_help
+        ;;
+    *)
+        # Pass through any other commands directly to the test script
+        print_status "Passing command to test script..."
+        node "$TEST_SCRIPT" "$@"
+        ;;
+esac

@@ -1,94 +1,86 @@
-import clsx from 'clsx';
-import { useMutation, useQuery } from 'convex/react';
+import { useQuery, useMutation } from '../hooks/useApi';
 import { KeyboardEvent, useRef, useState } from 'react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
-import { useSendInput } from '../hooks/sendInput';
-import { Player } from '../../convex/aiTown/player';
-import { Conversation } from '../../convex/aiTown/conversation';
+
+interface Player {
+  id: string;
+  human?: string;
+}
+
+interface Conversation {
+  id: string;
+  participants: string[];
+}
 
 export function MessageInput({
   worldId,
-  engineId,
   humanPlayer,
   conversation,
 }: {
-  worldId: Id<'worlds'>;
-  engineId: Id<'engines'>;
+  worldId: string;
   humanPlayer: Player;
   conversation: Conversation;
 }) {
-  const descriptions = useQuery(api.world.gameDescriptions, { worldId });
-  const humanName = descriptions?.playerDescriptions.find((p) => p.playerId === humanPlayer.id)
-    ?.name;
-  const inputRef = useRef<HTMLParagraphElement>(null);
-  const inflightUuid = useRef<string | undefined>();
-  const writeMessage = useMutation(api.messages.writeMessage);
-  const startTyping = useSendInput(engineId, 'startTyping');
-  const currentlyTyping = conversation.isTyping;
+  const { data: gameDescriptions } = useQuery('/api/world/gameDescriptions');
+  
+  const [message, setMessage] = useState('');
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const onKeyDown = async (e: KeyboardEvent) => {
-    e.stopPropagation();
+  const { mutate: send } = useMutation();
 
-    // Set the typing indicator if we're not submitting.
-    if (e.key !== 'Enter') {
-      console.log(inflightUuid.current);
-      if (currentlyTyping || inflightUuid.current !== undefined) {
-        return;
+  const sendMessage = async () => {
+    if (!message.trim()) return;
+    
+    const conversationId = conversation.id;
+    
+    try {
+      await send('/api/messages/send', {
+        conversationId,
+        author: humanPlayer.id,
+        text: message,
+        worldId
+      });
+      setMessage('');
+      if (textAreaRef.current) {
+        textAreaRef.current.style.height = 'auto';
       }
-      inflightUuid.current = crypto.randomUUID();
-      try {
-        // Don't show a toast on error.
-        await startTyping({
-          playerId: humanPlayer.id,
-          conversationId: conversation.id,
-          messageUuid: inflightUuid.current,
-        });
-      } finally {
-        inflightUuid.current = undefined;
-      }
-      return;
+    } catch (error) {
+      console.error('Failed to send message:', error);
     }
-
-    // Send the current message.
-    e.preventDefault();
-    if (!inputRef.current) {
-      return;
-    }
-    const text = inputRef.current.innerText;
-    inputRef.current.innerText = '';
-    if (!text) {
-      return;
-    }
-    let messageUuid = inflightUuid.current;
-    if (currentlyTyping && currentlyTyping.playerId === humanPlayer.id) {
-      messageUuid = currentlyTyping.messageUuid;
-    }
-    messageUuid = messageUuid || crypto.randomUUID();
-    await writeMessage({
-      worldId,
-      playerId: humanPlayer.id,
-      conversationId: conversation.id,
-      text,
-      messageUuid,
-    });
   };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void sendMessage();
+    }
+  };
+
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value);
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = 'auto';
+      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight}px`;
+    }
+  };
+
   return (
-    <div className="leading-tight mb-6">
-      <div className="flex gap-4">
-        <span className="uppercase flex-grow">{humanName}</span>
-      </div>
-      <div className={clsx('bubble', 'bubble-mine')}>
-        <p
-          className="bg-white -mx-3 -my-1"
-          ref={inputRef}
-          contentEditable
-          style={{ outline: 'none' }}
-          tabIndex={0}
-          placeholder="Type here"
-          onKeyDown={(e) => onKeyDown(e)}
-        />
-      </div>
+    <div className="flex gap-2 p-4 border-t border-gray-200">
+      <textarea
+        ref={textAreaRef}
+        value={message}
+        onChange={handleInput}
+        onKeyDown={handleKeyDown}
+        placeholder="Type your message..."
+        className="flex-1 resize-none rounded-lg border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        rows={1}
+      />
+      <button
+        onClick={sendMessage}
+        disabled={!message.trim()}
+        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+      >
+        Send
+      </button>
     </div>
   );
 }

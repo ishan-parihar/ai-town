@@ -1,4 +1,4 @@
-import { FieldConfig, History, unpackSampleRecord } from '../../convex/engine/historicalObject';
+import { FieldConfig, History, unpackSampleRecord } from '../types/historical';
 import { useMemo, useRef } from 'react';
 
 export function useHistoricalValue<T extends Record<string, number>>(
@@ -53,7 +53,7 @@ class HistoryManager {
       if (histories.length == 0) {
         continue;
       }
-      let foundIndex = null;
+      let foundIndex: number | null = null;
       let currentValue = histories[0].initialValue;
       for (let i = 0; i < histories.length; i++) {
         const history = histories[i];

@@ -1,44 +1,48 @@
 import { useRef, useState } from 'react';
 import PixiGame from './PixiGame.tsx';
-
 import { useElementSize } from 'usehooks-ts';
 import { Stage } from '@pixi/react';
-import { ConvexProvider, useConvex, useQuery } from 'convex/react';
 import PlayerDetails from './PlayerDetails.tsx';
-import { api } from '../../convex/_generated/api';
+import { useQuery } from '../hooks/useApi';
 import { useWorldHeartbeat } from '../hooks/useWorldHeartbeat.ts';
 import { useHistoricalTime } from '../hooks/useHistoricalTime.ts';
 import { DebugTimeManager } from './DebugTimeManager.tsx';
-import { GameId } from '../../convex/aiTown/ids.ts';
 import { useServerGame } from '../hooks/serverGame.ts';
 
-export const SHOW_DEBUG_UI = !!import.meta.env.VITE_SHOW_DEBUG_UI;
+export const SHOW_DEBUG_UI = false;
 
 export default function Game() {
-  const convex = useConvex();
   const [selectedElement, setSelectedElement] = useState<{
     kind: 'player';
-    id: GameId<'players'>;
+    id: string;
   }>();
   const [gameWrapperRef, { width, height }] = useElementSize();
 
-  const worldStatus = useQuery(api.world.defaultWorldStatus);
-  const worldId = worldStatus?.worldId;
-  const engineId = worldStatus?.engineId;
+  const worldStatus = useQuery('world/defaultWorldStatus');
+  const worldId = worldStatus.data?.worldId;
+  const engineId = worldStatus.data?.engineId;
 
   const game = useServerGame(worldId);
 
   // Send a periodic heartbeat to our world to keep it alive.
   useWorldHeartbeat();
 
-  const worldState = useQuery(api.world.worldState, worldId ? { worldId } : 'skip');
-  const { historicalTime, timeManager } = useHistoricalTime(worldState?.engine);
+  const worldState = useQuery('world/worldState', worldId ? { worldId } : 'skip');
+  const { historicalTime, timeManager } = useHistoricalTime(worldState.data?.engine);
 
   const scrollViewRef = useRef<HTMLDivElement>(null);
 
   if (!worldId || !engineId || !game) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-white text-center">
+          <div className="text-xl mb-4">Loading AI Council LifeOS...</div>
+          <div className="text-sm opacity-75">Initializing your personal council</div>
+        </div>
+      </div>
+    );
   }
+
   return (
     <>
       {SHOW_DEBUG_UI && <DebugTimeManager timeManager={timeManager} width={200} height={100} />}
@@ -48,19 +52,15 @@ export default function Game() {
           <div className="absolute inset-0">
             <div className="container">
               <Stage width={width} height={height} options={{ backgroundColor: 0x7ab5ff }}>
-                {/* Re-propagate context because contexts are not shared between renderers.
-https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-531549215 */}
-                <ConvexProvider client={convex}>
-                  <PixiGame
-                    game={game}
-                    worldId={worldId}
-                    engineId={engineId}
-                    width={width}
-                    height={height}
-                    historicalTime={historicalTime}
-                    setSelectedElement={setSelectedElement}
-                  />
-                </ConvexProvider>
+                <PixiGame
+                  game={game}
+                  worldId={worldId}
+                  engineId={engineId}
+                  width={width}
+                  height={height}
+                  historicalTime={historicalTime}
+                  setSelectedElement={setSelectedElement}
+                />
               </Stage>
             </div>
           </div>
@@ -74,7 +74,7 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
             worldId={worldId}
             engineId={engineId}
             game={game}
-            playerId={selectedElement?.id}
+            playerId={selectedElement?.id as any}
             setSelectedElement={setSelectedElement}
             scrollViewRef={scrollViewRef}
           />
