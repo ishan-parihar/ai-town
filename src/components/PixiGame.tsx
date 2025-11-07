@@ -1,15 +1,12 @@
-import * as PIXI from 'pixi.js';
 import { useApp } from '@pixi/react';
-import { Player, SelectElement } from './Player.tsx';
+import { Player } from './Player.tsx';
 import { useEffect, useRef, useState } from 'react';
 import { PixiStaticMap, preloadMapAssets } from './PixiStaticMap.tsx';
 import PixiViewport from './PixiViewport.tsx';
 import { Viewport } from 'pixi-viewport';
 import { useQuery } from '../hooks/useApi';
 import { useSendInput } from '../hooks/sendInput.ts';
-import { toastOnError } from '../toasts.ts';
 import { DebugPath } from './DebugPath.tsx';
-import { PositionIndicator } from './PositionIndicator.tsx';
 import { SHOW_DEBUG_UI } from './Game.tsx';
 import { ServerGame } from '../hooks/serverGame.ts';
 
@@ -25,8 +22,8 @@ const PixiGame = (props: {
   const viewport = useRef<Viewport | null>(null);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   
-  const { data: gameDescriptions } = useQuery('/api/world/gameDescriptions');
-  const sendInput = useSendInput();
+  const { data: gameDescriptions } = useQuery('world/gameDescriptions');
+  const sendInput = useSendInput(engineId, 'move');
 
   // Initialize viewport
   useEffect(() => {
@@ -94,7 +91,7 @@ const PixiGame = (props: {
         y,
       });
     } catch (error) {
-      toastOnError('Failed to move player', error);
+      console.error('Failed to move player:', error);
     }
   };
 
@@ -115,6 +112,18 @@ const PixiGame = (props: {
         }}
       />
       
+      {/* Render AI Agents */}
+      {game?.world?.agents?.map((agent: any) => (
+        <Player
+          key={agent.id}
+          game={game}
+          isViewer={false}
+          player={{...agent, isAgent: true}}
+          onClick={(element) => element && setSelectedElement(element.id)}
+        />
+      ))}
+      
+      {/* Render Human Players (if any) */}
       {game?.world?.players?.map((player: any) => (
         <Player
           key={player.id}

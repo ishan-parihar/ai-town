@@ -31,7 +31,7 @@ class APIServer {
     }
     
     this.dbManager = DatabaseManager.getInstance();
-    this.port = parseInt(process.env.PORT || '3000');
+    this.port = parseInt(process.env.PORT || '3001');
     
     this.setupMiddleware();
     this.setupRoutes();
@@ -46,7 +46,7 @@ class APIServer {
 
     // CORS
     this.app.use(cors({
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: process.env.FRONTEND_URL || 'http://localhost:5176',
       credentials: true
     }));
 
@@ -63,6 +63,12 @@ class APIServer {
     this.app.use(morgan('combined') as any);
     this.app.use(express.json({ limit: '50mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+    
+    // Request logging
+    this.app.use((req, res, next) => {
+      console.log(`📥 ${req.method} ${req.path} from ${req.ip || 'unknown'}`);
+      next();
+    });
   }
 
   private setupRoutes(): void {
@@ -197,7 +203,150 @@ class APIServer {
       },
     ];
 
-    // World state (replaces Convex world queries)
+    // World status for Game component
+    this.app.get('/api/world/defaultWorldStatus', (_req, res) => {
+      res.json({
+        worldId: 'default-world',
+        engineId: 'default-engine',
+        lastViewed: Date.now()
+      });
+    });
+
+    // World state for Game component  
+    this.app.get('/api/world/worldState', (_req, res) => {
+      // Add mock players to world state
+      const mockPlayers = councilMembers.map((member, index) => ({
+        id: member.playerId,
+        name: member.name,
+        role: member.role,
+        position: {
+          x: (index % 4) * 100 + 100,
+          y: Math.floor(index / 4) * 100 + 100
+        },
+        status: member.status,
+        description: `I am ${member.name}, your ${member.role}. I specialize in ${member.expertise.join(', ')}.`
+      }));
+      
+      // Add human player
+      mockPlayers.push({
+        id: 'human',
+        name: 'You',
+        role: 'User',
+        position: { x: 200, y: 200 },
+        status: 'active',
+        description: 'The user seeking guidance'
+      });
+      
+      res.json({
+        world: {
+          id: 'default-world',
+          name: 'AI Council LifeOS',
+          status: 'active',
+          players: mockPlayers
+        },
+        engine: {
+          tick: 0,
+          startTime: Date.now() - 60000,
+          lastUpdate: Date.now()
+        }
+      });
+    });
+
+    // Game descriptions
+    this.app.get('/api/world/gameDescriptions', (_req, res) => {
+      // Use the actual gentle.js map data structure
+      const gentleMap = {
+        tileSetUrl: '/assets/gentle-obj.png',
+        tileDim: 32,
+        tileSetDimX: 256,
+        tileSetDimY: 256,
+        bgTiles: [[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]],
+        objectTiles: [],
+        animatedSprites: [
+          { x: 10 * 32, y: 10 * 32, w: 32, h: 32, sheet: 'campfire.json', animation: 'burn' },
+          { x: 20 * 32, y: 15 * 32, w: 32, h: 32, sheet: 'windmill.json', animation: 'spin' },
+          { x: 30 * 32, y: 20 * 32, w: 32, h: 32, sheet: 'gentlewaterfall.json', animation: 'flow' },
+          { x: 15 * 32, y: 25 * 32, w: 32, h: 32, sheet: 'gentlesparkle.json', animation: 'sparkle' }
+        ]
+      };
+      
+      res.json({
+        agentDescriptions: councilMembers.map(member => ({
+          agentId: member.id,
+          name: member.name,
+          identity: `I am ${member.name}, your ${member.role}. I specialize in ${member.expertise.join(', ')}.`,
+          plan: `Provide insights and guidance on ${member.expertise.join(', ')}`,
+          dataFocus: member.dataFocus,
+          expertise: member.expertise,
+          role: member.role
+        })),
+        playerDescriptions: [
+          {
+            playerId: 'human',
+            name: 'You',
+            description: 'The user seeking guidance from the AI council'
+          }
+        ],
+        worldMap: gentleMap
+      });
+    });
+
+    // Background music
+    this.app.get('/api/music/background', (_req, res) => {
+      res.json({
+        playing: false,
+        track: null,
+        volume: 0.5
+      });
+    });
+
+    // Testing controls
+    this.app.get('/api/testing/stopAllowed', (_req, res) => {
+      res.json({ allowed: true });
+    });
+
+    this.app.post('/api/testing/resume', (_req, res) => {
+      res.json({ status: 'resumed' });
+    });
+
+    this.app.post('/api/testing/stop', (_req, res) => {
+      res.json({ status: 'stopped' });
+    });
+
+    // World (already exists but ensure it returns proper format)
     this.app.get('/api/world', async (_req, res) => {
       try {
         const db = await this.dbManager.getProvider();
@@ -213,6 +362,37 @@ class APIServer {
       } catch (error) {
         res.status(500).json({ error: (error as Error).message });
       }
+    });
+
+    // Input handling (replaces Convex input system)
+    this.app.post('/api/world/sendWorldInput', (req, res) => {
+      const { engineId, name, args } = req.body;
+      const inputId = 'input-' + Math.random().toString(36).substring(2);
+      
+      // For now, just return a success response
+      // In a real implementation, you'd process the input and update game state
+      res.json(inputId);
+    });
+
+    this.app.get('/api/inputs/:inputId/status', (req, res) => {
+      const { inputId } = req.params;
+      
+      // For now, just return completed status
+      // In a real implementation, you'd check the actual input status
+      res.json({
+        status: 'completed',
+        kind: 'success',
+        value: null
+      });
+    });
+
+    // Heartbeat endpoint
+    this.app.post('/api/world/heartbeatWorld', (req, res) => {
+      const { worldId } = req.body;
+      
+      // For now, just return success
+      // In a real implementation, you'd update the world's last viewed timestamp
+      res.json({ success: true });
     });
 
     // Council members
@@ -446,17 +626,33 @@ class APIServer {
       console.log('✅ Database connected successfully');
 
       // Start HTTP server
-      this.server.listen(this.port, () => {
-        console.log(`🚀 AI Town API Server running on port ${this.port}`);
-        console.log(`📊 Health check: http://localhost:${this.port}/health`);
-        console.log(`🔧 Database provider: ${this.dbManager.getConfig().provider}`);
-        console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`🤖 LLM Provider: ${process.env.CUSTOM_PROVIDER_1_NAME || 'Default'}`);
+      await new Promise<void>((resolve, reject) => {
+        this.server.listen(this.port, '0.0.0.0', () => {
+          console.log(`🚀 AI Town API Server running on port ${this.port}`);
+          console.log(`📊 Health check: http://localhost:${this.port}/health`);
+          console.log(`🔧 Database provider: ${this.dbManager.getConfig().provider}`);
+          console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+          console.log(`🤖 LLM Provider: ${process.env.CUSTOM_PROVIDER_1_NAME || 'Default'}`);
+          console.log(`🌐 Server binding: 0.0.0.0:${this.port}`);
+          
+          // Prevent the process from exiting
+          console.log('✅ Server is ready and accepting connections');
+          resolve();
+        });
+        
+        this.server.on('error', (err: any) => {
+          if (err.code === 'EADDRINUSE') {
+            console.error(`❌ Port ${this.port} is already in use`);
+          } else {
+            console.error('❌ Server error:', err);
+          }
+          reject(err);
+        });
       });
 
-      // Graceful shutdown
-      process.on('SIGTERM', () => this.shutdown());
-      process.on('SIGINT', () => this.shutdown());
+      // Graceful shutdown - disabled for testing
+      // process.on('SIGTERM', () => this.shutdown());
+      // process.on('SIGINT', () => this.shutdown());
 
     } catch (error) {
       console.error('❌ Failed to start server:', error);
@@ -493,7 +689,15 @@ class APIServer {
 // Start server if this file is run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   const server = new APIServer();
-  server.start().catch(console.error);
+  server.start().then(() => {
+    console.log('🎯 Server initialization complete');
+    
+    // Keep the process alive
+    setInterval(() => {
+      // This interval keeps the Node.js process alive
+    }, 60000); // Check every minute
+    
+  }).catch(console.error);
 }
 
 export default APIServer;

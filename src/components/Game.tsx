@@ -13,7 +13,7 @@ export const SHOW_DEBUG_UI = false;
 
 export default function Game() {
   const [selectedElement, setSelectedElement] = useState<{
-    kind: 'player';
+    kind: 'player' | 'agent';
     id: string;
   }>();
   const [gameWrapperRef, { width, height }] = useElementSize();
@@ -56,10 +56,8 @@ export default function Game() {
                   game={game}
                   worldId={worldId}
                   engineId={engineId}
-                  width={width}
-                  height={height}
-                  historicalTime={historicalTime}
-                  setSelectedElement={setSelectedElement}
+                  humanPlayerId={undefined}
+                  isPlaying={true}
                 />
               </Stage>
             </div>

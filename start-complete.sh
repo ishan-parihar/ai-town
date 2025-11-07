@@ -1,65 +1,56 @@
 #!/bin/bash
 
-# AI Town Startup - Complete Version with Convex Backend
-# This script starts ALL required services for the AI Council
+# AI Town Startup - Working Version with Simple Backend
+# This script starts the frontend and backend for AI Town
 
-echo "🚀 Starting AI Council LifeOS (Complete)..."
+echo "🚀 Starting AI Town (Working Version)..."
 
 # Kill any existing processes
-pkill -f "server/server.js" 2>/dev/null || true
-pkill -f "vite.*5176" 2>/dev/null || true
-pkill -f "convex dev" 2>/dev/null || true
+pkill -f "tsx.*simple-server" 2>/dev/null || true
+pkill -f "vite.*5177" 2>/dev/null || true
 
 # Wait for processes to fully stop
 sleep 2
 
-echo "📦 Initializing Convex backend..."
-# Initialize Convex with agent creation
-npm run predev &
-CONVEX_PID=$!
-
-# Wait for Convex to initialize
-echo "⏳ Waiting for Convex to initialize (15 seconds)..."
-sleep 15
-
-# Start Convex backend (this runs the game engine and agents)
-echo "🧠 Starting Convex backend (Game Engine + AI Agents)..."
-npm run dev:backend &
+# Start Backend Server (Simple Express server)
+echo "🧠 Starting Backend Server (Express API)..."
+npx tsx simple-server.ts &
 BACKEND_PID=$!
 
 # Wait for backend to start
-sleep 10
-
-# Start API Server
-echo "🔗 Starting API Server..."
-node server/server.js &
-API_PID=$!
+sleep 3
 
 # Start Frontend with Vite
 echo "🎨 Starting Frontend..."
 npm run dev:vite &
 FRONTEND_PID=$!
 
-# Wait for all services to be ready
+# Wait for frontend to start
 sleep 5
 
+# Test API endpoints
+echo "🔍 Testing API endpoints..."
+if node test-endpoints.cjs; then
+    echo "✅ Backend API is working"
+else
+    echo "⚠️  Backend API may have issues"
+fi
+
 echo ""
-echo "✅ AI Council LifeOS is fully running!"
-echo "📱 Frontend: http://localhost:5176 or http://localhost:5177 (check Vite output for correct port)"
-echo "🔗 API: http://localhost:3002"
-echo "🧠 Convex Dashboard: http://localhost:6789" 
-echo "🤖 AI Agents: Running in Convex backend"
+echo "✅ AI Town is running!"
+echo "📱 Frontend: http://localhost:5177"
+echo "🔗 API: http://localhost:3001"
+echo "📊 Health: http://localhost:3001/health"
 echo ""
 echo "🎯 What you should see:"
-echo "   • 8 Council members (Aria, Marcus, Dr. Lena, Sophia, David, Ruby, Max, Nova)"
-echo "   • Map backdrop with tiled textures"
-echo "   • Animated elements (windmill, fire, waterfall)"
-echo "   • Interactive chat with AI council"
+echo "   • AI Town game interface"
+echo "   • Map with characters"
+echo "   • Interactive elements"
 echo ""
 echo "🛠️  Debugging:"
-echo "   • Check browser console for asset loading logs"
-echo "   • Visit http://localhost:6789 for Convex dashboard"
-echo "   • Check server logs for agent creation"
+echo "   • Check browser console for errors"
+echo "   • Network tab for API calls"
+echo "   • Backend logs: tail -f backend.log"
 echo ""
 echo "Press Ctrl+C to stop all services"
 
@@ -67,10 +58,9 @@ echo "Press Ctrl+C to stop all services"
 cleanup() {
     echo ""
     echo "🛑 Stopping all services..."
-    kill $CONVEX_PID $BACKEND_PID $API_PID $FRONTEND_PID 2>/dev/null || true
-    pkill -f "convex dev" 2>/dev/null || true
-    pkill -f "server/server.js" 2>/dev/null || true
-    pkill -f "vite.*5176" 2>/dev/null || true
+    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+    pkill -f "tsx.*simple-server" 2>/dev/null || true
+    pkill -f "vite.*5177" 2>/dev/null || true
     echo "✅ All services stopped"
     exit
 }

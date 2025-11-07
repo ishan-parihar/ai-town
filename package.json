@@ -8,6 +8,7 @@
     "dev:frontend": "vite",
     "dev:vite": "vite",
     "start": "./start-ai-town.sh",
+    "start:combined": "tsx dev-server.ts",
     "start:simple": "./start-ai-town.sh",
     "start:quick": "./start-quick.sh",
     "start:complete": "./start-complete.sh",

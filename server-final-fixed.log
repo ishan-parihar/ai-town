@@ -1,0 +1,11 @@
+📝 Using memory database for development (set DATABASE_URL to use PostgreSQL)
+🔌 Initializing database connection...
+✅ Database connected successfully
+🚀 AI Town API Server running on port 3001
+📊 Health check: http://localhost:3001/health
+🔧 Database provider: memory
+🌍 Environment: development
+🤖 LLM Provider: Default
+🌐 Server binding: 0.0.0.0:3001
+✅ Server is ready and accepting connections
+🎯 Server initialization complete

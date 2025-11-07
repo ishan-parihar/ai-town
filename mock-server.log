@@ -1,0 +1,11 @@
+/home/ishanp/Documents/GitHub/ai-town/mock-server.ts:5
+const app = express();
+            ^
+
+TypeError: express is not a function
+    at <anonymous> (/home/ishanp/Documents/GitHub/ai-town/mock-server.ts:5:13)
+    at ModuleJob.run (node:internal/modules/esm/module_job:377:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:671:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v25.1.0
